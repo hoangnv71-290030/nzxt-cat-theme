@@ -191,47 +191,30 @@
             document.getElementById('timeValue').textContent = `${String(hours).padStart(2, '0')}:${minutes}`;
         }
 
-        // Update temperatures from NZXT API
-        async function updateTemperatures() {
-            try {
-                // NZXT provides system data through window.nzxt object
-                if (window.nzxt && window.nzxt.v1 && window.nzxt.v1.monitoring) {
-                    // Get all sensors data
-                    const sensors = await window.nzxt.v1.monitoring.sensors();
+        // NZXT API callback to receive monitoring data
+        window.nzxt = {
+            v1: {
+                onMonitoringDataUpdate: (data) => {
+                    const { cpus, gpus } = data;
                     
-                    // Find CPU temperature
-                    const cpuSensor = sensors.find(s => 
-                        s.type === 'Temperature' && 
-                        (s.name.includes('CPU') || s.name.includes('Processor'))
-                    );
-                    if (cpuSensor) {
-                        document.getElementById('cpuTemp').textContent = Math.round(cpuSensor.value);
+                    // Update CPU temperature
+                    if (cpus && cpus.length > 0) {
+                        document.getElementById('cpuTemp').textContent = Math.round(cpus[0].temperature);
                     }
                     
-                    // Find GPU temperature
-                    const gpuSensor = sensors.find(s => 
-                        s.type === 'Temperature' && 
-                        s.name.includes('GPU')
-                    );
-                    if (gpuSensor) {
-                        document.getElementById('gpuTemp').textContent = Math.round(gpuSensor.value);
+                    // Update GPU temperature
+                    if (gpus && gpus.length > 0) {
+                        document.getElementById('gpuTemp').textContent = Math.round(gpus[0].temperature);
                     }
                 }
-            } catch (error) {
-                console.log('Error getting temperatures:', error);
-                // Keep showing -- if error
             }
-        }
+        };
 
         // Initialize
         updateTime();
-        updateTemperatures();
 
         // Update time every second
         setInterval(updateTime, 1000);
-
-        // Update temperatures every 2 seconds
-        setInterval(updateTemperatures, 2000);
 
         // Ensure video plays
         const video = document.getElementById('videoBackground');
