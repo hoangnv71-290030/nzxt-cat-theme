@@ -192,22 +192,34 @@
         }
 
         // Update temperatures from NZXT API
-        function updateTemperatures() {
-            // NZXT provides system data through window.nzxt object
-            if (window.nzxt && window.nzxt.v1) {
-                // Get CPU temperature
-                window.nzxt.v1.cpuTemperature().then(temp => {
-                    document.getElementById('cpuTemp').textContent = Math.round(temp);
-                }).catch(() => {
-                    document.getElementById('cpuTemp').textContent = '--';
-                });
-
-                // Get GPU temperature
-                window.nzxt.v1.gpuTemperature().then(temp => {
-                    document.getElementById('gpuTemp').textContent = Math.round(temp);
-                }).catch(() => {
-                    document.getElementById('gpuTemp').textContent = '--';
-                });
+        async function updateTemperatures() {
+            try {
+                // NZXT provides system data through window.nzxt object
+                if (window.nzxt && window.nzxt.v1 && window.nzxt.v1.monitoring) {
+                    // Get all sensors data
+                    const sensors = await window.nzxt.v1.monitoring.sensors();
+                    
+                    // Find CPU temperature
+                    const cpuSensor = sensors.find(s => 
+                        s.type === 'Temperature' && 
+                        (s.name.includes('CPU') || s.name.includes('Processor'))
+                    );
+                    if (cpuSensor) {
+                        document.getElementById('cpuTemp').textContent = Math.round(cpuSensor.value);
+                    }
+                    
+                    // Find GPU temperature
+                    const gpuSensor = sensors.find(s => 
+                        s.type === 'Temperature' && 
+                        s.name.includes('GPU')
+                    );
+                    if (gpuSensor) {
+                        document.getElementById('gpuTemp').textContent = Math.round(gpuSensor.value);
+                    }
+                }
+            } catch (error) {
+                console.log('Error getting temperatures:', error);
+                // Keep showing -- if error
             }
         }
 
